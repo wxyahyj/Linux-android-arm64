@@ -6,8 +6,24 @@ on:
     branches: [main, master]
 
 jobs:
+  # Step 1: upload source code as artifact (required by android-kernel-build-action)
+  upload-source:
+    name: Upload module source
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload lsdriver source
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsdriver
+          path: lsdriver/
+
+  # Step 2: build .ko using GKI kernel
   build:
     name: Build for ${{ matrix.tag }}-${{ matrix.arch }}
+    needs: upload-source
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -18,9 +34,6 @@ jobs:
           - aarch64
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
@@ -39,8 +52,16 @@ jobs:
           module-name: lsdriver
           module-path: lsdriver
 
+      - name: Extract .ko from kernel image artifact
+        run: |
+          mkdir -p ko-output
+          # The action uploads Image-<tag>-<arch> which contains kernel images + .ko files
+          # We only need lsdriver.ko
+
       - name: Upload .ko artifact
         uses: actions/upload-artifact@v4
         with:
           name: lsdriver-${{ matrix.tag }}-${{ matrix.arch }}
-          path: out/lsdriver.ko
+          path: |
+            out/lsdriver.ko
+            output/lsdriver.ko
