@@ -47,6 +47,7 @@ jobs:
         with:
           name: lsdriver-source
           path: lsdriver
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build kernel module
         uses: feicong/android-kernel-build-action@v1
