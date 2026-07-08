@@ -1,0 +1,63 @@
+name: Build lsdriver.ko (GKI 5.10)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  upload-source:
+    name: Upload module source
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload lsdriver source
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsdriver-source
+          path: lsdriver/
+
+  build:
+    name: Build for ${{ matrix.tag }}-${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    needs: upload-source
+    strategy:
+      matrix:
+        tag:
+          - android12-5.10
+          - android13-5.10
+        arch:
+          - aarch64
+
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Download source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lsdriver-source
+          path: lsdriver
+
+      - name: Build kernel module
+        uses: feicong/gki-kernel-module-build-action@v1
+        with:
+          arch: ${{ matrix.arch }}
+          tag: ${{ matrix.tag }}
+          module-name: lsdriver
+          module-path: lsdriver
+
+      - name: Upload .ko artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsdriver-${{ matrix.tag }}-${{ matrix.arch }}
+          path: out/lsdriver.ko
