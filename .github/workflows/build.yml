@@ -49,7 +49,7 @@ jobs:
           path: lsdriver
 
       - name: Build kernel module
-        uses: feicong/gki-kernel-module-build-action@v1
+        uses: feicong/android-kernel-build-action@v1
         with:
           arch: ${{ matrix.arch }}
           tag: ${{ matrix.tag }}
